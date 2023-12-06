@@ -1,46 +1,90 @@
 package kth.decitong.librarydb.model;
 
 import java.sql.Date;
+import java.util.ArrayList;
 
-/**
- * Representation of a book.
- * 
- * @author anderslm@kth.se
- */
-public class Book {
-    
-    private int bookId;
-    private String isbn; // should check format
-    private String title;
-    private Date published;
-    private String storyLine = "";
-    // TODO: 
+public class Book implements Comparable<Book>{
+
+    private final int bookId;
+    private final String isbn; // should check format (10 eller 13 siffror)
+    private final String title;
+    private final Date published;
+    private int rating;
+    private ArrayList<Author> authors;
+    private Genre genre;
+    // TODO:
     // Add authors, as a separate class(!), and corresponding methods, to your implementation
     // as well, i.e. "private ArrayList<Author> authors;"
-    
-    public Book(int bookId, String isbn, String title, Date published) {
+
+    public Book(int bookId, String isbn, String title, Date published, int rating, Genre genre) {
         this.bookId = bookId;
-        this.isbn = isbn;
+        if(checkISBN(isbn)){
+            this.isbn = isbn;
+        }
+        else throw new IllegalArgumentException("Invalid ISBN");
+
         this.title = title;
         this.published = published;
+        if (checkRating(rating)){
+            this.rating = rating;
+        }
+        else throw new IllegalArgumentException("Invalid rating");
+        authors = new ArrayList<>();
+        this.genre = genre;
     }
-    
-    public Book(String isbn, String title, Date published) {
-        this(-1, isbn, title, published); 
-    }
-    
+
     public int getBookId() { return bookId; }
     public String getIsbn() { return isbn; }
     public String getTitle() { return title; }
     public Date getPublished() { return published; }
-    public String getStoryLine() { return storyLine; }
-    
-    public void setStoryLine(String storyLine) {
-        this.storyLine = storyLine;
+
+    public int getRating() {
+        return rating;
     }
-    
+
+    public ArrayList<Author> getAuthors() {
+        return new ArrayList<>(authors);
+    }
+
+    public void addAuthors(Author authors) {
+        if (!this.authors.equals(authors)){
+            this.authors.add(authors);
+        }
+    }
+
+    public void setRating(int rating) {
+        this.rating = rating;
+    }
+
+    private boolean checkISBN(String isbn) {
+        String regex = "\\d{10}|\\d{13}";
+        return isbn.matches(regex);
+    }
+
+
+    private boolean checkRating(int rating){
+        return rating >= 1 && rating <= 5;
+    }
+
+    public Genre getGenre() {
+        return genre;
+    }
+
     @Override
-    public String toString() {
-        return title + ", " + isbn + ", " + published.toString();
+    public int compareTo(Book o) {
+        int titleCompare = title.compareTo(o.title);
+        if (titleCompare == 0) {
+            return Integer.compare(bookId, o.bookId);
+        }
+
+        return titleCompare;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if(o instanceof Book){
+            return this.compareTo((Book) o) == 0;
+        }
+        return false;
     }
 }

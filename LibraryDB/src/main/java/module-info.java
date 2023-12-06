@@ -6,6 +6,6 @@ module kth.decitong.librarydb {
 
 
     opens kth.decitong.librarydb to javafx.fxml;
-    opens kth.decitong.librarydb.model to javafx.fxml;
+    opens kth.decitong.librarydb.model to javafx.fxml, javafx.base;
     exports kth.decitong.librarydb;
 }

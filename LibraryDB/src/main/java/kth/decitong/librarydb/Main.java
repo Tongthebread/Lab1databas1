@@ -1,11 +1,10 @@
-package se.kth.anderslm.booksdb;
+package kth.decitong.librarydb;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-
-import se.kth.anderslm.booksdb.model.BooksDbMockImpl;
-import se.kth.anderslm.booksdb.view.BooksPane;
+import kth.decitong.librarydb.model.BooksDbImpl;
+import kth.decitong.librarydb.view.BooksPane;
 
 /**
  * Application start up.
@@ -17,7 +16,7 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) {
 
-        BooksDbMockImpl booksDb = new BooksDbMockImpl(); // model
+        BooksDbImpl booksDb = new BooksDbImpl(); // model
         // Don't forget to connect to the db, somewhere...
 
         BooksPane root = new BooksPane(booksDb);

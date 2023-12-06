@@ -5,7 +5,7 @@
  */
 package kth.decitong.librarydb.model;
 
-import java.sql.Date;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -21,47 +21,175 @@ import java.util.List;
 public class BooksDbImpl implements BooksDbInterface {
 
     private final List<Book> books;
+    private Connection conn;
 
     public BooksDbImpl() {
-        books = Arrays.asList(DATA);
+        books = Arrays.asList();
     }
 
     @Override
     public boolean connect(String database) throws BooksDbException {
-        // mock implementation
-        return true;
+        String server = "jdbc:mysql://myplace.se:3306/" + database + "?UseClientEnc=UTF8";
+        String user = "root";
+        String pwd = "psyke456SONG";
+        System.out.println("connect...");
+        try{
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            conn = DriverManager.getConnection(server, user, pwd);
+            System.out.println("Connection succeeded");
+            return true;
+        } catch (ClassNotFoundException e){
+            throw new BooksDbException("MySQL JDBC driver not found");
+        }catch (SQLException e){
+            System.out.println("Couldnt connect");
+            throw new BooksDbException("Error connection to database");
+        }
     }
 
     @Override
     public void disconnect() throws BooksDbException {
-        // mock implementation
+        try {
+            if (conn != null && !conn.isClosed()) {
+                System.out.println("Disconnect succeeded");
+                conn.close();
+            }
+        } catch (SQLException e) {
+            throw new BooksDbException("Error disconnecting from database");
+        }
     }
 
     @Override
-    public List<Book> searchBooksByTitle(String searchTitle)
-            throws BooksDbException {
-        // mock implementation
-        // NB! Your implementation should select the books matching
-        // the search string via a query to a database (not load all books from db)
+    public List<Book> searchBooksByTitle(String searchTitle) throws BooksDbException {
         List<Book> result = new ArrayList<>();
-        searchTitle = searchTitle.toLowerCase();
-        for (Book book : books) {
-            if (book.getTitle().toLowerCase().contains(searchTitle)) {
+        String sql = "SELECT * FROM Book WHERE LOWER(title) LIKE ?";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, "%" + searchTitle.toLowerCase() + "%");
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                int bookId = rs.getInt("bookID");
+                String isbn = rs.getString("isbn");
+                String title = rs.getString("title");
+                Date published = rs.getDate("published");
+                int rating = rs.getInt("rating");
+                String genreStr = rs.getString("genre");
+                Genre genre = Genre.valueOf(genreStr.toUpperCase());
+
+                Book book = new Book(bookId, isbn, title, published, rating, genre);
                 result.add(book);
             }
+        } catch (SQLException e) {
+            throw new BooksDbException("Error fetching books by title", e);
         }
         return result;
     }
 
-    private static final Book[] DATA = {
-            new Book(1, "123456789", "Databases Illuminated", new Date(2018, 1, 1)),
-            new Book(2, "234567891", "Dark Databases", new Date(1990, 1, 1)),
-            new Book(3, "456789012", "The buried giant", new Date(2000, 1, 1)),
-            new Book(4, "567890123", "Never let me go", new Date(2000, 1, 1)),
-            new Book(5, "678901234", "The remains of the day", new Date(2000, 1, 1)),
-            new Book(6, "234567890", "Alias Grace", new Date(2000, 1, 1)),
-            new Book(7, "345678911", "The handmaids tale", new Date(2010, 1, 1)),
-            new Book(8, "345678901", "Shuggie Bain", new Date(2020, 1, 1)),
-            new Book(9, "345678912", "Microserfs", new Date(2000, 1, 1)),
-    };
+
+    @Override
+    public ArrayList<Book> searchBooksByAuthor(String authorName) throws BooksDbException {
+        return null;
+    }
+
+    @Override
+    public ArrayList<Book> searchBooksByGenre(String genre) throws BooksDbException {
+        return null;
+    }
+
+    @Override
+    public ArrayList<Book> searchBooksByRating(int rating) throws BooksDbException {
+        return null;
+    }
+
+    @Override
+    public ArrayList<Book> searchBooksByISBN(String ISBN) throws BooksDbException {
+        return null;
+    }
+
+    @Override
+    public void deleteBook(int bookID) throws BooksDbException {
+        String sql = "DELETE FROM Book WHERE bookID = ?";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, bookID);
+            int rowsFound = pstmt.executeUpdate();
+            if (rowsFound == 0) {
+                throw new BooksDbException("No book found with ID: " + bookID);
+            }
+        } catch (SQLException e) {
+            throw new BooksDbException("Error deleting book from database", e);
+        }
+    }
+
+    @Override
+    public void addBook(Book book) throws BooksDbException {
+        String sql = "INSERT INTO Book (isbn, bookID, title, published, rating, genre) VALUES (?, ?, ?, ?, ?, ?)";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, book.getIsbn());
+            pstmt.setInt(2, book.getBookId());
+            pstmt.setString(3, book.getTitle());
+            pstmt.setDate(4, book.getPublished());
+            pstmt.setInt(5, book.getRating());
+            pstmt.setString(6, String.valueOf(book.getGenre()));
+
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new BooksDbException("Error adding book to database", e);
+        }
+
+        for (Author author : book.getAuthors()) {
+            addAuthorToBook(author, book);
+        }
+    }
+
+    @Override
+    public void addAuthor(Author author) throws BooksDbException {
+        String sql = "INSERT INTO Author (authorID, firstName, lastName, birthDate) VALUES (?, ?, ?, ?)";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, author.getAuthorID());
+            pstmt.setString(2, author.getFirstName());
+            pstmt.setString(3, author.getLastName());
+            pstmt.setDate(4, new java.sql.Date(author.getBirthDate().getTime()));
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new BooksDbException("Error adding author to database", e);
+        }
+    }
+
+    @Override
+    public void addAuthorToBook(Author author, Book book) throws BooksDbException {
+        String sql = "INSERT INTO AuthorOfBook (authorID, bookID) VALUES (?, ?)";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, author.getAuthorID());
+            pstmt.setInt(2, book.getBookId());
+
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new BooksDbException("Error linking author to book in database", e);
+        }
+    }
+
+    @Override
+    public List<Author> getAuthorsForBook(int bookID) throws BooksDbException {
+        List<Author> authors = new ArrayList<>();
+        String sql = "SELECT Author.authorID, Author.firstName, Author.lastName, Author.birthDate FROM Author INNER JOIN AuthorOfBook ON Author.authorID = AuthorOfBook.authorID WHERE AuthorOfBook.bookID = ?";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, bookID);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                int authorID = rs.getInt("authorID");
+                String firstName = rs.getString("firstName");
+                String lastName = rs.getString("lastName");
+                Date birthDate = rs.getDate("birthDate");
+
+                Author author = new Author(authorID, firstName, lastName, birthDate);
+                authors.add(author);
+            }
+        } catch (SQLException e) {
+            throw new BooksDbException("Error fetching authors for book", e);
+        }
+        return authors;
+    }
 }

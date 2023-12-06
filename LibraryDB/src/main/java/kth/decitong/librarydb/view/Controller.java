@@ -1,12 +1,12 @@
 package kth.decitong.librarydb.view;
 
+import javafx.scene.control.Alert;
+import kth.decitong.librarydb.model.Author;
 import kth.decitong.librarydb.model.Book;
 import kth.decitong.librarydb.model.BooksDbInterface;
 import kth.decitong.librarydb.model.SearchMode;
-
 import java.util.ArrayList;
 import java.util.List;
-
 import static javafx.scene.control.Alert.AlertType.*;
 
 /**
@@ -17,8 +17,8 @@ import static javafx.scene.control.Alert.AlertType.*;
  */
 public class Controller {
 
-    private final BooksPane booksView; // view
-    private final BooksDbInterface booksDb; // model
+    private static BooksPane booksView; // view
+    private static BooksDbInterface booksDb; // model
 
     public Controller(BooksDbInterface booksDb, BooksPane booksView) {
         this.booksDb = booksDb;
@@ -59,4 +59,53 @@ public class Controller {
 
     // TODO:
     // Add methods for all types of user interaction (e.g. via  menus).
+    public static void addBook(Book book) {
+        try {
+            booksDb.addBook(book);
+            for (Author author : book.getAuthors()) {
+                booksDb.addAuthorToBook(author, book);
+            }
+            booksView.showAlertAndWait("Book and authors added successfully", INFORMATION);
+        } catch (Exception e){
+            booksView.showAlertAndWait("Error adding book and authors to database", ERROR);
+        }
+    }
+
+    public static void deleteBook(Book book){
+        try{
+            booksDb.deleteBook(book.getBookId());
+            booksView.showAlertAndWait("Book removed succesfully.", INFORMATION);
+        } catch (Exception e){
+            booksView.showAlertAndWait("Error removing book from database", ERROR);
+        }
+
+    }
+
+    public static void addAuthor(Author author){
+        try{
+            booksDb.addAuthor(author);
+            booksView.showAlertAndWait("Author added successfully.", INFORMATION);
+        } catch (Exception e) {
+            booksView.showAlertAndWait("Error adding author to database", ERROR);
+        }
+    }
+
+    public static void connect() {
+        try {
+            booksDb.connect("DB_LIBRARY"); // Use your actual database name
+            booksView.showAlertAndWait("Connected to database successfully", Alert.AlertType.INFORMATION);
+        } catch (Exception e) {
+            booksView.showAlertAndWait("Failed to connect to database: " + e.getMessage(), Alert.AlertType.ERROR);
+        }
+    }
+
+    public static void disconnect() {
+        try {
+            booksDb.disconnect();
+            booksView.showAlertAndWait("Disconnected from database.", INFORMATION);
+        } catch (Exception e) {
+            booksView.showAlertAndWait("Error disconnecting from database: " + e.getMessage(), ERROR);
+        }
+    }
 }
+
