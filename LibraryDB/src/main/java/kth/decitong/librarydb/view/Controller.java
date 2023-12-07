@@ -71,16 +71,6 @@ public class Controller {
         }
     }
 
-    public static void deleteBook(Book book){
-        try{
-            booksDb.deleteBook(book.getBookId());
-            booksView.showAlertAndWait("Book removed succesfully.", INFORMATION);
-        } catch (Exception e){
-            booksView.showAlertAndWait("Error removing book from database", ERROR);
-        }
-
-    }
-
     public static void addAuthor(Author author){
         try{
             booksDb.addAuthor(author);
@@ -89,6 +79,18 @@ public class Controller {
             booksView.showAlertAndWait("Error adding author to database", ERROR);
         }
     }
+
+    public static void deleteBook(int bookId) {
+        try {
+            booksDb.deleteBook(bookId);
+            booksView.showAlertAndWait("Book removed successfully.", Alert.AlertType.INFORMATION);
+        } catch (Exception e) {
+            booksView.showAlertAndWait("Error removing book from database", Alert.AlertType.ERROR);
+        }
+    }
+
+
+
 
     public static void connect() {
         try {

@@ -167,27 +167,26 @@ public class BooksPane extends VBox {
     }
 
     private void showRemoveBookDialog() {
-        Dialog<Book> dialog = new Dialog<>();
+        TextInputDialog dialog = new TextInputDialog();
         dialog.setTitle("Remove Book");
-        dialog.setHeaderText("Enter Book ID");
+        dialog.setHeaderText("Enter Book ID to Remove");
+        dialog.setContentText("Book ID:");
 
-        Book selectedBook = booksTable.getSelectionModel().getSelectedItem();
-        if (selectedBook != null) {
-            Alert confirmDialog = new Alert(Alert.AlertType.CONFIRMATION);
-            confirmDialog.setTitle("Delete Book");
-            confirmDialog.setHeaderText("Delete Book");
-            confirmDialog.setContentText("Are you sure you want to delete the selected book: " + selectedBook.getTitle() + "?");
-
-            Optional<ButtonType> result = confirmDialog.showAndWait();
-            if (result.isPresent() && result.get() == ButtonType.OK) {
-                Controller.deleteBook(selectedBook);
-                booksInTable.remove(selectedBook);
+        Optional<String> result = dialog.showAndWait();
+        result.ifPresent(bookIdString -> {
+            try {
+                int bookId = Integer.parseInt(bookIdString);
+                Controller.deleteBook(bookId);
+                booksInTable.removeIf(book -> book.getBookId() == bookId);
+            } catch (NumberFormatException e) {
+                showAlertAndWait("Invalid Book ID: " + bookIdString, Alert.AlertType.ERROR);
+            } catch (Exception e) {
+                showAlertAndWait("Error removing book from database", Alert.AlertType.ERROR);
             }
-        } else {
-            showAlertAndWait("No book selected for deletion.", Alert.AlertType.INFORMATION);
-        }
-
+        });
     }
+
+
 
     private void showAddBookDialog() {
         Dialog<Book> dialog = new Dialog<>();

@@ -29,7 +29,7 @@ public class BooksDbImpl implements BooksDbInterface {
 
     @Override
     public boolean connect(String database) throws BooksDbException {
-        String server = "jdbc:mysql://myplace.se:3306/" + database + "?UseClientEnc=UTF8";
+        String server = "jdbc:mysql://localhost:3306/" + database + "?UseClientEnc=UTF8";
         String user = "root";
         String pwd = "psyke456SONG";
         System.out.println("connect...");
@@ -107,40 +107,48 @@ public class BooksDbImpl implements BooksDbInterface {
 
     @Override
     public void deleteBook(int bookID) throws BooksDbException {
-        String sql = "DELETE FROM Book WHERE bookID = ?";
+        try {
+            // First, delete any entries in AuthorOfBook
+            String sqlDeleteAuthorOfBook = "DELETE FROM AuthorOfBook WHERE bookID = ?";
+            try (PreparedStatement pstmt = conn.prepareStatement(sqlDeleteAuthorOfBook)) {
+                pstmt.setInt(1, bookID);
+                pstmt.executeUpdate();
+            }
 
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, bookID);
-            int rowsFound = pstmt.executeUpdate();
-            if (rowsFound == 0) {
-                throw new BooksDbException("No book found with ID: " + bookID);
+            // Then, delete the book
+            String sqlDeleteBook = "DELETE FROM Book WHERE bookID = ?";
+            try (PreparedStatement pstmt = conn.prepareStatement(sqlDeleteBook)) {
+                pstmt.setInt(1, bookID);
+                int rowsAffected = pstmt.executeUpdate();
+                if (rowsAffected == 0) {
+                    throw new BooksDbException("No book found with ID: " + bookID);
+                }
             }
         } catch (SQLException e) {
             throw new BooksDbException("Error deleting book from database", e);
         }
     }
 
+
     @Override
     public void addBook(Book book) throws BooksDbException {
-        String sql = "INSERT INTO Book (isbn, bookID, title, published, rating, genre) VALUES (?, ?, ?, ?, ?, ?)";
-
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, book.getIsbn());
-            pstmt.setInt(2, book.getBookId());
-            pstmt.setString(3, book.getTitle());
-            pstmt.setDate(4, book.getPublished());
-            pstmt.setInt(5, book.getRating());
-            pstmt.setString(6, String.valueOf(book.getGenre()));
-
-            pstmt.executeUpdate();
+        try {
+            String sqlBook = "INSERT INTO Book (isbn, bookID, title, published, rating, genre) VALUES (?, ?, ?, ?, ?, ?)";
+            try (PreparedStatement pstmtBook = conn.prepareStatement(sqlBook)) {
+                pstmtBook.setString(1, book.getIsbn());
+                pstmtBook.setInt(2, book.getBookId());
+                pstmtBook.setString(3, book.getTitle());
+                pstmtBook.setDate(4, new java.sql.Date(book.getPublished().getTime()));
+                pstmtBook.setInt(5, book.getRating());
+                pstmtBook.setString(6, String.valueOf(book.getGenre()));
+                pstmtBook.executeUpdate();
+            }
         } catch (SQLException e) {
             throw new BooksDbException("Error adding book to database", e);
         }
-
-        for (Author author : book.getAuthors()) {
-            addAuthorToBook(author, book);
-        }
     }
+
+
 
     @Override
     public void addAuthor(Author author) throws BooksDbException {
