@@ -1,6 +1,8 @@
 package kth.decitong.librarydb.view;
 
+import javafx.collections.FXCollections;
 import javafx.scene.control.Alert;
+import javafx.scene.control.TableView;
 import kth.decitong.librarydb.model.Author;
 import kth.decitong.librarydb.model.Book;
 import kth.decitong.librarydb.model.BooksDbInterface;
@@ -28,43 +30,51 @@ public class Controller {
     protected void onSearchSelected(String searchFor, SearchMode mode) {
         try {
             if (searchFor != null && searchFor.length() > 1) {
-                List<Book> result = null;
+                List<Book> result = new ArrayList<>();
                 switch (mode) {
                     case Title:
                         result = booksDb.searchBooksByTitle(searchFor);
                         break;
                     case ISBN:
-                        // ...
+                        // Implementera sökning efter ISBN
                         break;
                     case Author:
-                        // ...
+                        // Implementera sökning efter författare
                         break;
                     default:
-                        result= new ArrayList<>();
+                        break;
                 }
-                if (result == null || result.isEmpty()) {
-                    booksView.showAlertAndWait(
-                            "No results found.", INFORMATION);
+                // Hämta och associera författare med varje bok i result
+                for (Book book : result) {
+                    List<Author> authors = booksDb.getAuthorsForBook(book.getBookId());
+                    book.getAuthors().clear();
+                    book.getAuthors().addAll(authors);
+                }
+
+                if (result.isEmpty()) {
+                    booksView.showAlertAndWait("No results found.", INFORMATION);
                 } else {
                     booksView.displayBooks(result);
                 }
             } else {
-                booksView.showAlertAndWait(
-                        "Enter a search string!", WARNING);
+                booksView.showAlertAndWait("Enter a search string!", WARNING);
             }
         } catch (Exception e) {
-            booksView.showAlertAndWait("Database error.",ERROR);
+            booksView.showAlertAndWait("Database error.", ERROR);
         }
     }
 
-    // TODO:
-    // Add methods for all types of user interaction (e.g. via  menus).
+
     public static void addBook(Book book) {
         try {
             booksDb.addBook(book);
             for (Author author : book.getAuthors()) {
                 booksDb.addAuthorToBook(author, book);
             }
+            List<Author> fetchedAuthors = booksDb.getAuthorsForBook(book.getBookId());
+            book.getAuthors().clear();
+            book.getAuthors().addAll(fetchedAuthors);
+
             booksView.showAlertAndWait("Book and authors added successfully", INFORMATION);
         } catch (Exception e){
             booksView.showAlertAndWait("Error adding book and authors to database", ERROR);
@@ -89,9 +99,6 @@ public class Controller {
         }
     }
 
-
-
-
     public static void connect() {
         try {
             booksDb.connect("DB_LIBRARY"); // Use your actual database name
@@ -109,5 +116,44 @@ public class Controller {
             booksView.showAlertAndWait("Error disconnecting from database: " + e.getMessage(), ERROR);
         }
     }
+
+    public static void fetchAllAuthors(TableView<Author> authorTable) {
+        try {
+            List<Author> authors = booksDb.getAllAuthors(); // Implement this method in BooksDbImpl
+            authorTable.setItems(FXCollections.observableArrayList(authors));
+        } catch (Exception e) {
+            booksView.showAlertAndWait("Error fetching authors from database", ERROR);
+        }
+    }
+
+    public static List<Author> fetchAuthorsForBook(int bookId) {
+        try {
+            return booksDb.getAuthorsForBook(bookId);
+        } catch (Exception e) {
+            booksView.showAlertAndWait("Error fetching authors for book", ERROR);
+            return new ArrayList<>();
+        }
+    }
+
+    public static void fetchAllBooks() {
+        try {
+            List<Book> allBooks = booksDb.getAllBooks();
+            if (allBooks.isEmpty()) {
+                booksView.showAlertAndWait("No books found in the database.", Alert.AlertType.INFORMATION);
+            } else {
+                // Hämta och associera författare med varje bok
+                for (Book book : allBooks) {
+                    List<Author> authors = booksDb.getAuthorsForBook(book.getBookId());
+                    book.getAuthors().clear();
+                    book.getAuthors().addAll(authors);
+                }
+                booksView.displayBooks(allBooks);
+            }
+        } catch (Exception e) {
+            booksView.showAlertAndWait("Error fetching all books from database: " + e.getMessage(), Alert.AlertType.ERROR);
+        }
+    }
+
+
 }
 

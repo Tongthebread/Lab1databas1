@@ -76,6 +76,13 @@ public class BooksDbImpl implements BooksDbInterface {
                 Genre genre = Genre.valueOf(genreStr.toUpperCase());
 
                 Book book = new Book(bookId, isbn, title, published, rating, genre);
+
+                // Hämta författare för varje bok och lägg till dem
+                List<Author> authors = getAuthorsForBook(bookId);
+                for (Author author : authors) {
+                    book.addAuthors(author);
+                }
+
                 result.add(book);
             }
         } catch (SQLException e) {
@@ -83,7 +90,6 @@ public class BooksDbImpl implements BooksDbInterface {
         }
         return result;
     }
-
 
     @Override
     public ArrayList<Book> searchBooksByAuthor(String authorName) throws BooksDbException {
@@ -148,8 +154,6 @@ public class BooksDbImpl implements BooksDbInterface {
         }
     }
 
-
-
     @Override
     public void addAuthor(Author author) throws BooksDbException {
         String sql = "INSERT INTO Author (authorID, firstName, lastName, birthDate) VALUES (?, ?, ?, ?)";
@@ -171,9 +175,9 @@ public class BooksDbImpl implements BooksDbInterface {
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, author.getAuthorID());
             pstmt.setInt(2, book.getBookId());
-
             pstmt.executeUpdate();
         } catch (SQLException e) {
+            System.out.println("no author");
             throw new BooksDbException("Error linking author to book in database", e);
         }
     }
@@ -181,7 +185,7 @@ public class BooksDbImpl implements BooksDbInterface {
     @Override
     public List<Author> getAuthorsForBook(int bookID) throws BooksDbException {
         List<Author> authors = new ArrayList<>();
-        String sql = "SELECT Author.authorID, Author.firstName, Author.lastName, Author.birthDate FROM Author INNER JOIN AuthorOfBook ON Author.authorID = AuthorOfBook.authorID WHERE AuthorOfBook.bookID = ?";
+        String sql = "SELECT Author.* FROM Author INNER JOIN AuthorOfBook ON Author.authorID = AuthorOfBook.authorID WHERE AuthorOfBook.bookID = ?";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, bookID);
@@ -200,4 +204,54 @@ public class BooksDbImpl implements BooksDbInterface {
         }
         return authors;
     }
+
+    @Override
+    public List<Author> getAllAuthors() throws BooksDbException {
+        List<Author> authors = new ArrayList<>();
+        String sql = "SELECT * FROM Author";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                int authorID = rs.getInt("authorID");
+                String firstName = rs.getString("firstName");
+                String lastName = rs.getString("lastName");
+                Date birthDate = rs.getDate("birthDate");
+                authors.add(new Author(authorID, firstName, lastName, birthDate));
+            }
+        } catch (SQLException e) {
+            throw new BooksDbException("Error fetching authors", e);
+        }
+        return authors;
+    }
+
+    @Override
+    public List<Book> getAllBooks() throws BooksDbException {
+        List<Book> allBooks = new ArrayList<>();
+        String sql = "SELECT * FROM Book";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                int bookId = rs.getInt("bookID");
+                String isbn = rs.getString("isbn");
+                String title = rs.getString("title");
+                Date published = rs.getDate("published");
+                int rating = rs.getInt("rating");
+                String genreStr = rs.getString("genre");
+                Genre genre = Genre.valueOf(genreStr.toUpperCase());
+
+                Book book = new Book(bookId, isbn, title, published, rating, genre);
+
+                List<Author> authors = getAuthorsForBook(bookId);
+                for (Author author : authors) {
+                    book.addAuthors(author);
+                }
+                allBooks.add(book);
+            }
+        } catch (SQLException e) {
+            throw new BooksDbException("Error fetching all books", e);
+        }
+        return allBooks;
+    }
+
 }

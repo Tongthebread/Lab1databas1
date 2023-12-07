@@ -2,6 +2,7 @@ package kth.decitong.librarydb.view;
 
 import java.sql.Date;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -89,16 +90,16 @@ public class BooksPane extends VBox {
         booksTable.setEditable(false);
         booksTable.setPlaceholder(new Label("No rows to display"));
 
-        // define columns
+        // Definiera kolumner för bokens attribut
         TableColumn<Book, String> titleCol = new TableColumn<>("Title");
-        TableColumn<Book, Integer> bookIDCol = new TableColumn<>("BookID");
+        TableColumn<Book, Integer> bookIDCol = new TableColumn<>("Book ID");
         TableColumn<Book, String> isbnCol = new TableColumn<>("ISBN");
         TableColumn<Book, Date> publishedCol = new TableColumn<>("Published");
         TableColumn<Book, String> authorCol = new TableColumn<>("Author");
         TableColumn<Book, Integer> ratingCol = new TableColumn<>("Rating");
         TableColumn<Book, Genre> genreCol = new TableColumn<>("Genre");
 
-        // Set cell value factories
+        // Ställ in cell value factories för varje kolumn
         titleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
         bookIDCol.setCellValueFactory(new PropertyValueFactory<>("bookId"));
         isbnCol.setCellValueFactory(new PropertyValueFactory<>("isbn"));
@@ -106,7 +107,7 @@ public class BooksPane extends VBox {
         ratingCol.setCellValueFactory(new PropertyValueFactory<>("rating"));
         genreCol.setCellValueFactory(new PropertyValueFactory<>("genre"));
 
-        // Custom cell value factory for author column
+        // Anpassad cell value factory för författarkolumnen
         authorCol.setCellValueFactory(cellData -> {
             List<Author> authors = cellData.getValue().getAuthors();
             if (authors != null && !authors.isEmpty()) {
@@ -115,15 +116,16 @@ public class BooksPane extends VBox {
                         .collect(Collectors.joining(", "));
                 return new ReadOnlyStringWrapper(authorNames);
             }
-            return new ReadOnlyStringWrapper("");
+            return new ReadOnlyStringWrapper("No Authors");
         });
 
-        // Add columns to table
+        // Lägg till kolumner till tabellen
         booksTable.getColumns().addAll(titleCol, bookIDCol, isbnCol, publishedCol, authorCol, ratingCol, genreCol);
 
-        // Set items in the table
+        // Sätt items i tabellen
         booksTable.setItems(booksInTable);
     }
+
 
     private void initSearchView(Controller controller) {
         searchField = new TextField();
@@ -186,8 +188,6 @@ public class BooksPane extends VBox {
         });
     }
 
-
-
     private void showAddBookDialog() {
         Dialog<Book> dialog = new Dialog<>();
         dialog.setTitle("Add New Book");
@@ -195,13 +195,17 @@ public class BooksPane extends VBox {
 
         ButtonType addButton = new ButtonType("Add", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(addButton, ButtonType.CANCEL);
-        List<Author> authors = new ArrayList<>();
+        List<Author> selectedAuthors = new ArrayList<>();
 
-        Button addAuthorButton = new Button("Add Author");
-        addAuthorButton.setOnAction(e -> {
+        // Skapa en TableView för att välja författare
+        TableView<Author> authorTable = createAuthorSelectionTable();
+        authorTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE); // Tillåt multival
+
+        Button addNewAuthorButton = new Button("Add New Author");
+        addNewAuthorButton.setOnAction(e -> {
             Author author = showAddAuthorDialog();
             if (author != null) {
-                authors.add(author);
+                authorTable.getItems().add(author);
             }
         });
 
@@ -234,7 +238,8 @@ public class BooksPane extends VBox {
         grid.add(ratingField, 1, 4);
         grid.add(new Label("Genre:"), 0, 5);
         grid.add(genreField, 1, 5);
-        grid.add(addAuthorButton, 1, 7);
+        grid.add(authorTable, 0, 6, 2, 1); // Span two columns
+        grid.add(addNewAuthorButton, 0, 7);
 
         dialog.getDialogPane().setContent(grid);
 
@@ -246,13 +251,20 @@ public class BooksPane extends VBox {
                     String title = titleField.getText();
                     Date publishedDate = Date.valueOf(publishedDateField.getValue());
                     int rating = Integer.parseInt(ratingField.getText());
-                    Genre genre = Genre.valueOf(genreField.getText().toUpperCase()); // Anta att Genre är en enum
+                    Genre genre = Genre.valueOf(genreField.getText().toUpperCase());
 
                     Book book = new Book(bookId, isbn, title, publishedDate, rating, genre);
 
-                    for (Author author : authors) {
-                        book.addAuthors(author); // Using the addAuthor method of Book class
-                    }
+                    // Lägg till de valda författarna till boken
+                    selectedAuthors.addAll(authorTable.getSelectionModel().getSelectedItems());
+                    selectedAuthors.forEach(book::addAuthors);
+
+                    // Lägg till boken i databasen
+                    Controller.addBook(book);
+
+                    // Uppdatera booksInTable med den nya boken
+                    booksInTable.add(book);
+
                     return book;
                 } catch (Exception e) {
                     showAlertAndWait("Invalid input: " + e.getMessage(), Alert.AlertType.ERROR);
@@ -262,11 +274,7 @@ public class BooksPane extends VBox {
             return null;
         });
 
-        Optional<Book> result = dialog.showAndWait();
-        result.ifPresent(book -> {
-            Controller.addBook(book);
-            booksInTable.add(book);
-        });
+        dialog.showAndWait();
     }
 
     private Author showAddAuthorDialog() {
@@ -308,7 +316,6 @@ public class BooksPane extends VBox {
                     String firstName = firstNameField.getText();
                     String lastName = lastNameField.getText();
                     Date birthDate = Date.valueOf(birthDateField.getValue());
-
                     return new Author(authorId, firstName, lastName, birthDate);
                 } catch (Exception e) {
                     showAlertAndWait("Invalid input: " + e.getMessage(), Alert.AlertType.ERROR);
@@ -325,4 +332,27 @@ public class BooksPane extends VBox {
         return result.orElse(null);
     }
 
+    private TableView<Author> createAuthorSelectionTable() {
+        TableView<Author> authorTable = new TableView<>();
+        authorTable.setEditable(false);
+        authorTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+
+        TableColumn<Author, Integer> idCol = new TableColumn<>("Author ID");
+        TableColumn<Author, String> firstNameCol = new TableColumn<>("First Name");
+        TableColumn<Author, String> lastNameCol = new TableColumn<>("Last Name");
+        TableColumn<Author, Date> birthDateCol = new TableColumn<>("Birth Date");
+
+        idCol.setCellValueFactory(new PropertyValueFactory<>("authorID"));
+        firstNameCol.setCellValueFactory(new PropertyValueFactory<>("firstName"));
+        lastNameCol.setCellValueFactory(new PropertyValueFactory<>("lastName"));
+        birthDateCol.setCellValueFactory(new PropertyValueFactory<>("birthDate"));
+
+        // Add columns to table
+        authorTable.getColumns().addAll(idCol, firstNameCol, lastNameCol, birthDateCol);
+
+        // Fetch and display existing authors (this method needs to be implemented in your controller)
+        Controller.fetchAllAuthors(authorTable);
+
+        return authorTable;
+    }
 }
