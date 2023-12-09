@@ -3,10 +3,8 @@ package kth.decitong.librarydb.view;
 import javafx.collections.FXCollections;
 import javafx.scene.control.Alert;
 import javafx.scene.control.TableView;
-import kth.decitong.librarydb.model.Author;
-import kth.decitong.librarydb.model.Book;
-import kth.decitong.librarydb.model.BooksDbInterface;
-import kth.decitong.librarydb.model.SearchMode;
+import kth.decitong.librarydb.model.*;
+
 import java.util.ArrayList;
 import java.util.List;
 import static javafx.scene.control.Alert.AlertType.*;
@@ -26,44 +24,6 @@ public class Controller {
         this.booksDb = booksDb;
         this.booksView = booksView;
     }
-
-    protected void onSearchSelected(String searchFor, SearchMode mode) {
-        try {
-            if (searchFor != null && searchFor.length() > 1) {
-                List<Book> result = new ArrayList<>();
-                switch (mode) {
-                    case Title:
-                        result = booksDb.searchBooksByTitle(searchFor);
-                        break;
-                    case ISBN:
-                        // Implementera sökning efter ISBN
-                        break;
-                    case Author:
-                        // Implementera sökning efter författare
-                        break;
-                    default:
-                        break;
-                }
-                // Hämta och associera författare med varje bok i result
-                for (Book book : result) {
-                    List<Author> authors = booksDb.getAuthorsForBook(book.getBookId());
-                    book.getAuthors().clear();
-                    book.getAuthors().addAll(authors);
-                }
-
-                if (result.isEmpty()) {
-                    booksView.showAlertAndWait("No results found.", INFORMATION);
-                } else {
-                    booksView.displayBooks(result);
-                }
-            } else {
-                booksView.showAlertAndWait("Enter a search string!", WARNING);
-            }
-        } catch (Exception e) {
-            booksView.showAlertAndWait("Database error.", ERROR);
-        }
-    }
-
 
     public static void addBook(Book book) {
         try {
@@ -151,6 +111,123 @@ public class Controller {
             }
         } catch (Exception e) {
             booksView.showAlertAndWait("Error fetching all books from database: " + e.getMessage(), Alert.AlertType.ERROR);
+        }
+    }
+    protected void searchBooksByISBN(String isbn) {
+        try {
+            List<Book> result = booksDb.searchBooksByISBN(isbn);
+            for (Book book : result) {
+                List<Author> authors = booksDb.getAuthorsForBook(book.getBookId());
+                book.getAuthors().clear();
+                book.getAuthors().addAll(authors);
+            }
+            if (result.isEmpty()) {
+                booksView.showAlertAndWait("No books found with the given ISBN.", INFORMATION);
+            } else {
+                booksView.displayBooks(result);
+            }
+        } catch (Exception e) {
+            booksView.showAlertAndWait("Error searching books by ISBN: " + e.getMessage(), ERROR);
+        }
+    }
+    protected void searchBooksByAuthor(String authorName) {
+        try {
+            List<Book> result = booksDb.searchBooksByAuthor(authorName);
+            for (Book book : result) {
+                List<Author> authors = booksDb.getAuthorsForBook(book.getBookId());
+                book.getAuthors().clear();
+                book.getAuthors().addAll(authors);
+            }
+            if (result.isEmpty()) {
+                booksView.showAlertAndWait("No books found for the author: " + authorName, INFORMATION);
+            } else {
+                booksView.displayBooks(result);
+            }
+        } catch (Exception e) {
+            booksView.showAlertAndWait("Error searching books by author: " + e.getMessage(), ERROR);
+        }
+    }
+    protected void searchBooksByTitle(String title) {
+        try {
+            List<Book> result = booksDb.searchBooksByTitle(title);
+            for (Book book : result) {
+                List<Author> authors = booksDb.getAuthorsForBook(book.getBookId());
+                book.getAuthors().clear();
+                book.getAuthors().addAll(authors);
+            }
+            if (result.isEmpty()) {
+                booksView.showAlertAndWait("No books found for the title: " + title, INFORMATION);
+            } else {
+                booksView.displayBooks(result);
+            }
+        } catch (Exception e) {
+            booksView.showAlertAndWait("Error searching books by title: " + e.getMessage(), ERROR);
+        }
+    }
+    protected void searchBooksByRating(int rating) {
+        try {
+            List<Book> result = booksDb.searchBooksByRating(rating);
+            for (Book book : result) {
+                List<Author> authors = booksDb.getAuthorsForBook(book.getBookId());
+                book.getAuthors().clear();
+                book.getAuthors().addAll(authors);
+            }
+            if (result.isEmpty()) {
+                booksView.showAlertAndWait("No books found for the rating: " + rating, INFORMATION);
+            } else {
+                booksView.displayBooks(result);
+            }
+        } catch (Exception e) {
+            booksView.showAlertAndWait("Error searching books by rating: " + e.getMessage(), ERROR);
+        }
+    }
+    protected void searchBooksByGenre(String genre) {
+        try {
+            List<Book> result = booksDb.searchBooksByGenre(String.valueOf(genre));
+            for (Book book : result) {
+                List<Author> authors = booksDb.getAuthorsForBook(book.getBookId());
+                book.getAuthors().clear();
+                book.getAuthors().addAll(authors);
+            }
+            if (result.isEmpty()) {
+                booksView.showAlertAndWait("No books found for the genre: " + genre, INFORMATION);
+            } else {
+                booksView.displayBooks(result);
+            }
+        } catch (Exception e) {
+            booksView.showAlertAndWait("Error searching books by genre: " + e.getMessage(), ERROR);
+        }
+    }
+
+    protected void onSearchSelected(String searchFor, SearchMode mode) {
+        try {
+            if (searchFor != null && !searchFor.trim().isEmpty()) {
+                switch (mode) {
+                    case Title:
+                        searchBooksByTitle(searchFor);
+                        break;
+                    case ISBN:
+                        searchBooksByISBN(searchFor);
+                        break;
+                    case Author:
+                        searchBooksByAuthor(searchFor);
+                        break;
+                    case Rating:
+                        try {
+                            int rating = Integer.parseInt(searchFor);
+                            searchBooksByRating(rating);
+                        } catch (NumberFormatException e) {
+                            booksView.showAlertAndWait("Invalid rating format. Please enter a numeric value.", Alert.AlertType.ERROR);
+                        }
+                    case Genre:
+                        searchBooksByGenre(searchFor);
+                        break;
+                }
+            } else {
+                booksView.showAlertAndWait("Enter a search string!", WARNING);
+            }
+        } catch (Exception e) {
+            booksView.showAlertAndWait("Search error: " + e.getMessage(), ERROR);
         }
     }
 

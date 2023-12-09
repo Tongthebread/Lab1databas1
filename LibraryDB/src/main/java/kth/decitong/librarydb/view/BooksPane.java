@@ -135,14 +135,10 @@ public class BooksPane extends VBox {
         searchModeBox.setValue(SearchMode.Title);
         searchButton = new Button("Search");
 
-        // event handling (dispatch to controller)
-        searchButton.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent event) {
-                String searchFor = searchField.getText();
-                SearchMode mode = searchModeBox.getValue();
-                controller.onSearchSelected(searchFor, mode);
-            }
+        searchButton.setOnAction(event -> {
+            String searchFor = searchField.getText();
+            SearchMode mode = searchModeBox.getValue();
+            controller.onSearchSelected(searchFor, mode);
         });
     }
 

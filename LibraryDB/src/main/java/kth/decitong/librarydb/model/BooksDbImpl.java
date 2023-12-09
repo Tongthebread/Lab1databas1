@@ -93,23 +93,145 @@ public class BooksDbImpl implements BooksDbInterface {
 
     @Override
     public ArrayList<Book> searchBooksByAuthor(String authorName) throws BooksDbException {
-        return null;
+        ArrayList<Book> books = new ArrayList<>();
+        String sql = "SELECT Book.* FROM Book " +
+                "INNER JOIN AuthorOfBook ON Book.bookID = AuthorOfBook.bookID " +
+                "INNER JOIN Author ON AuthorOfBook.authorID = Author.authorID " +
+                "WHERE LOWER(Author.firstName) LIKE ? OR LOWER(Author.lastName) LIKE ?";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, "%" + authorName.toLowerCase() + "%");
+            pstmt.setString(2, "%" + authorName.toLowerCase() + "%");
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                int bookId = rs.getInt("bookID");
+                String isbn = rs.getString("isbn");
+                String title = rs.getString("title");
+                Date published = rs.getDate("published");
+                int rating = rs.getInt("rating");
+                String genreStr = rs.getString("genre");
+                Genre genre = Genre.valueOf(genreStr.toUpperCase());
+
+                Book book = new Book(bookId, isbn, title, published, rating, genre);
+
+                // Hämta författare för varje bok och lägg till dem
+                List<Author> authors = getAuthorsForBook(bookId);
+                for (Author author : authors) {
+                    book.addAuthors(author);
+                }
+
+                books.add(book);
+            }
+        } catch (SQLException e) {
+            throw new BooksDbException("Error fetching books by author", e);
+        }
+        return books;
     }
+
 
     @Override
     public ArrayList<Book> searchBooksByGenre(String genre) throws BooksDbException {
-        return null;
+        ArrayList<Book> books = new ArrayList<>();
+        String sql = "SELECT * FROM Book WHERE LOWER(genre) = ?";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, genre.toLowerCase());
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                int bookId = rs.getInt("bookID");
+                String isbn = rs.getString("isbn");
+                String title = rs.getString("title");
+                Date published = rs.getDate("published");
+                int rating = rs.getInt("rating");
+                String genreStr = rs.getString("genre");
+                Genre genreEnum = Genre.valueOf(genreStr.toUpperCase());
+
+                Book book = new Book(bookId, isbn, title, published, rating, genreEnum);
+
+                // Get authors for the book
+                List<Author> authors = getAuthorsForBook(bookId);
+                for (Author author : authors) {
+                    book.addAuthors(author);
+                }
+
+                books.add(book);
+            }
+        } catch (SQLException e) {
+            throw new BooksDbException("Error fetching books by genre", e);
+        } catch (IllegalArgumentException e) {
+            throw new BooksDbException("Error with genre enum value", e);
+        }
+        return books;
     }
+
 
     @Override
     public ArrayList<Book> searchBooksByRating(int rating) throws BooksDbException {
-        return null;
+        ArrayList<Book> books = new ArrayList<>();
+        String sql = "SELECT * FROM Book WHERE rating = ?";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, rating);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                int bookId = rs.getInt("bookID");
+                String isbn = rs.getString("isbn");
+                String title = rs.getString("title");
+                Date published = rs.getDate("published");
+                rating = rs.getInt("rating");
+                String genreStr = rs.getString("genre");
+                Genre genre = Genre.valueOf(genreStr.toUpperCase());
+
+                Book book = new Book(bookId, isbn, title, published, rating, genre);
+
+                // Hämta författare för varje bok och lägg till dem
+                List<Author> authors = getAuthorsForBook(bookId);
+                for (Author author : authors) {
+                    book.addAuthors(author);
+                }
+
+                books.add(book);
+            }
+        } catch (SQLException e) {
+            throw new BooksDbException("Error fetching books by rating", e);
+        }
+        return books;
     }
+
 
     @Override
     public ArrayList<Book> searchBooksByISBN(String ISBN) throws BooksDbException {
-        return null;
+        ArrayList<Book> books = new ArrayList<>();
+        String sql = "SELECT * FROM Book WHERE isbn = ?";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, ISBN);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                int bookId = rs.getInt("bookID");
+                String isbn = rs.getString("isbn");
+                String title = rs.getString("title");
+                Date published = rs.getDate("published");
+                int rating = rs.getInt("rating");
+                String genreStr = rs.getString("genre");
+                Genre genre = Genre.valueOf(genreStr.toUpperCase());
+
+                Book book = new Book(bookId, isbn, title, published, rating, genre);
+
+                // Hämta författare för varje bok och lägg till dem
+                List<Author> authors = getAuthorsForBook(bookId);
+                for (Author author : authors) {
+                    book.addAuthors(author);
+                }
+
+                books.add(book);
+            }
+        } catch (SQLException e) {
+            throw new BooksDbException("Error fetching books by ISBN", e);
+        }
+        return books;
     }
+
 
     @Override
     public void deleteBook(int bookID) throws BooksDbException {
