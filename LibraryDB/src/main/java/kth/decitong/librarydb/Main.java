@@ -16,20 +16,13 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) {
 
-        BooksDbImpl booksDb = new BooksDbImpl(); // model
-        // Don't forget to connect to the db, somewhere...
-
+        BooksDbImpl booksDb = new BooksDbImpl();
         BooksPane root = new BooksPane(booksDb);
-
         Scene scene = new Scene(root, 800, 600);
 
         primaryStage.setTitle("Books Database Client");
-        // add an exit handler to the stage (X) ?
-        primaryStage.setOnCloseRequest(event -> {
-            try {
-                booksDb.disconnect();
-            } catch (Exception e) {}
-        });
+        root.setupCloseRequestHandler(primaryStage);
+
         primaryStage.setScene(scene);
         primaryStage.show();
     }

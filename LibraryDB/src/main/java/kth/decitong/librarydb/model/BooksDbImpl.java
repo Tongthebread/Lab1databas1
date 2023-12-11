@@ -1,13 +1,7 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package kth.decitong.librarydb.model;
 
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -19,29 +13,23 @@ import java.util.List;
  * @author anderslm@kth.se
  */
 public class BooksDbImpl implements BooksDbInterface {
-
-    private final List<Book> books;
     private Connection conn;
-
-    public BooksDbImpl() {
-        books = Arrays.asList();
-    }
+    public BooksDbImpl() {}
 
     @Override
-    public boolean connect(String database) throws BooksDbException {
+    public void connect(String database) throws BooksDbException {
         String server = "jdbc:mysql://localhost:3306/" + database + "?UseClientEnc=UTF8";
         String user = "root";
         String pwd = "psyke456SONG";
-        System.out.println("connect...");
+
         try{
             Class.forName("com.mysql.cj.jdbc.Driver");
             conn = DriverManager.getConnection(server, user, pwd);
             System.out.println("Connection succeeded");
-            return true;
         } catch (ClassNotFoundException e){
             throw new BooksDbException("MySQL JDBC driver not found");
         }catch (SQLException e){
-            System.out.println("Couldnt connect");
+            System.out.println("Couldn't connect");
             throw new BooksDbException("Error connection to database");
         }
     }
@@ -50,7 +38,6 @@ public class BooksDbImpl implements BooksDbInterface {
     public void disconnect() throws BooksDbException {
         try {
             if (conn != null && !conn.isClosed()) {
-                System.out.println("Disconnect succeeded");
                 conn.close();
             }
         } catch (SQLException e) {
@@ -77,7 +64,6 @@ public class BooksDbImpl implements BooksDbInterface {
 
                 Book book = new Book(bookId, isbn, title, published, rating, genre);
 
-                // Hämta författare för varje bok och lägg till dem
                 List<Author> authors = getAuthorsForBook(bookId);
                 for (Author author : authors) {
                     book.addAuthors(author);
@@ -114,7 +100,6 @@ public class BooksDbImpl implements BooksDbInterface {
 
                 Book book = new Book(bookId, isbn, title, published, rating, genre);
 
-                // Hämta författare för varje bok och lägg till dem
                 List<Author> authors = getAuthorsForBook(bookId);
                 for (Author author : authors) {
                     book.addAuthors(author);
@@ -148,7 +133,6 @@ public class BooksDbImpl implements BooksDbInterface {
 
                 Book book = new Book(bookId, isbn, title, published, rating, genreEnum);
 
-                // Get authors for the book
                 List<Author> authors = getAuthorsForBook(bookId);
                 for (Author author : authors) {
                     book.addAuthors(author);
@@ -163,7 +147,6 @@ public class BooksDbImpl implements BooksDbInterface {
         }
         return books;
     }
-
 
     @Override
     public ArrayList<Book> searchBooksByRating(int rating) throws BooksDbException {
@@ -184,7 +167,6 @@ public class BooksDbImpl implements BooksDbInterface {
 
                 Book book = new Book(bookId, isbn, title, published, rating, genre);
 
-                // Hämta författare för varje bok och lägg till dem
                 List<Author> authors = getAuthorsForBook(bookId);
                 for (Author author : authors) {
                     book.addAuthors(author);
@@ -218,7 +200,6 @@ public class BooksDbImpl implements BooksDbInterface {
 
                 Book book = new Book(bookId, isbn, title, published, rating, genre);
 
-                // Hämta författare för varje bok och lägg till dem
                 List<Author> authors = getAuthorsForBook(bookId);
                 for (Author author : authors) {
                     book.addAuthors(author);
@@ -236,14 +217,12 @@ public class BooksDbImpl implements BooksDbInterface {
     @Override
     public void deleteBook(int bookID) throws BooksDbException {
         try {
-            // First, delete any entries in AuthorOfBook
             String sqlDeleteAuthorOfBook = "DELETE FROM AuthorOfBook WHERE bookID = ?";
             try (PreparedStatement pstmt = conn.prepareStatement(sqlDeleteAuthorOfBook)) {
                 pstmt.setInt(1, bookID);
                 pstmt.executeUpdate();
             }
 
-            // Then, delete the book
             String sqlDeleteBook = "DELETE FROM Book WHERE bookID = ?";
             try (PreparedStatement pstmt = conn.prepareStatement(sqlDeleteBook)) {
                 pstmt.setInt(1, bookID);
@@ -256,7 +235,6 @@ public class BooksDbImpl implements BooksDbInterface {
             throw new BooksDbException("Error deleting book from database", e);
         }
     }
-
 
     @Override
     public void addBook(Book book) throws BooksDbException {

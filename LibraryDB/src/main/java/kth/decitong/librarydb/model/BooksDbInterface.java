@@ -1,7 +1,5 @@
 package kth.decitong.librarydb.model;
 
-import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,11 +20,10 @@ public interface BooksDbInterface {
     
     /**
      * Connect to the database.
-     * @param database
-     * @return true on successful connection.
+     *
+     * @param database name of the real database
      */
-    public boolean connect(String database) throws BooksDbException;
-
+    public void connect(String database) throws BooksDbException;
     public void disconnect() throws BooksDbException;
     public List<Book> searchBooksByTitle(String title) throws BooksDbException;
     ArrayList<Book> searchBooksByAuthor(String authorName) throws BooksDbException;
@@ -35,9 +32,6 @@ public interface BooksDbInterface {
     ArrayList<Book> searchBooksByISBN(String ISBN) throws BooksDbException;
 
     void deleteBook(int bookID) throws BooksDbException;
-
-    // TODO: Add abstract methods for all inserts, deletes and queries 
-    // mentioned in the instructions for the assignement.
     void addBook(Book book) throws BooksDbException;
     void addAuthor(Author author) throws BooksDbException;
     void addAuthorToBook(Author author, Book book) throws BooksDbException;

@@ -4,8 +4,6 @@ import javafx.collections.FXCollections;
 import javafx.scene.control.Alert;
 import javafx.scene.control.TableView;
 import kth.decitong.librarydb.model.*;
-
-import java.util.ArrayList;
 import java.util.List;
 import static javafx.scene.control.Alert.AlertType.*;
 
@@ -17,12 +15,30 @@ import static javafx.scene.control.Alert.AlertType.*;
  */
 public class Controller {
 
-    private static BooksPane booksView; // view
-    private static BooksDbInterface booksDb; // model
+    private static BooksPane booksView;
+    private static BooksDbInterface booksDb;
 
     public Controller(BooksDbInterface booksDb, BooksPane booksView) {
-        this.booksDb = booksDb;
-        this.booksView = booksView;
+        Controller.booksDb = booksDb;
+        Controller.booksView = booksView;
+    }
+
+    public static void connect() {
+        try {
+            booksDb.connect("DB_LIBRARY"); // Use your actual database name
+            booksView.showAlertAndWait("Connected to database successfully", Alert.AlertType.INFORMATION);
+        } catch (Exception e) {
+            booksView.showAlertAndWait("Failed to connect to database: " + e.getMessage(), Alert.AlertType.ERROR);
+        }
+    }
+
+    public static void disconnect() {
+        try {
+            booksDb.disconnect();
+            booksView.showAlertAndWait("Disconnected from database.", INFORMATION);
+        } catch (Exception e) {
+            booksView.showAlertAndWait("Error disconnecting from database: " + e.getMessage(), ERROR);
+        }
     }
 
     public static void addBook(Book book) {
@@ -59,60 +75,15 @@ public class Controller {
         }
     }
 
-    public static void connect() {
-        try {
-            booksDb.connect("DB_LIBRARY"); // Use your actual database name
-            booksView.showAlertAndWait("Connected to database successfully", Alert.AlertType.INFORMATION);
-        } catch (Exception e) {
-            booksView.showAlertAndWait("Failed to connect to database: " + e.getMessage(), Alert.AlertType.ERROR);
-        }
-    }
-
-    public static void disconnect() {
-        try {
-            booksDb.disconnect();
-            booksView.showAlertAndWait("Disconnected from database.", INFORMATION);
-        } catch (Exception e) {
-            booksView.showAlertAndWait("Error disconnecting from database: " + e.getMessage(), ERROR);
-        }
-    }
-
     public static void fetchAllAuthors(TableView<Author> authorTable) {
         try {
-            List<Author> authors = booksDb.getAllAuthors(); // Implement this method in BooksDbImpl
+            List<Author> authors = booksDb.getAllAuthors();
             authorTable.setItems(FXCollections.observableArrayList(authors));
         } catch (Exception e) {
             booksView.showAlertAndWait("Error fetching authors from database", ERROR);
         }
     }
 
-    public static List<Author> fetchAuthorsForBook(int bookId) {
-        try {
-            return booksDb.getAuthorsForBook(bookId);
-        } catch (Exception e) {
-            booksView.showAlertAndWait("Error fetching authors for book", ERROR);
-            return new ArrayList<>();
-        }
-    }
-
-    public static void fetchAllBooks() {
-        try {
-            List<Book> allBooks = booksDb.getAllBooks();
-            if (allBooks.isEmpty()) {
-                booksView.showAlertAndWait("No books found in the database.", Alert.AlertType.INFORMATION);
-            } else {
-                // Hämta och associera författare med varje bok
-                for (Book book : allBooks) {
-                    List<Author> authors = booksDb.getAuthorsForBook(book.getBookId());
-                    book.getAuthors().clear();
-                    book.getAuthors().addAll(authors);
-                }
-                booksView.displayBooks(allBooks);
-            }
-        } catch (Exception e) {
-            booksView.showAlertAndWait("Error fetching all books from database: " + e.getMessage(), Alert.AlertType.ERROR);
-        }
-    }
     protected void searchBooksByISBN(String isbn) {
         try {
             List<Book> result = booksDb.searchBooksByISBN(isbn);
@@ -181,6 +152,7 @@ public class Controller {
             booksView.showAlertAndWait("Error searching books by rating: " + e.getMessage(), ERROR);
         }
     }
+
     protected void searchBooksByGenre(String genre) {
         try {
             List<Book> result = booksDb.searchBooksByGenre(String.valueOf(genre));
@@ -230,7 +202,6 @@ public class Controller {
             booksView.showAlertAndWait("Search error: " + e.getMessage(), ERROR);
         }
     }
-
 
 }
 

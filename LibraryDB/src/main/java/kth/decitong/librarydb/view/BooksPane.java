@@ -2,19 +2,18 @@ package kth.decitong.librarydb.view;
 
 import java.sql.Date;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
+import javafx.stage.Stage;
 import kth.decitong.librarydb.model.*;
 
 /**
@@ -24,14 +23,11 @@ import kth.decitong.librarydb.model.*;
  * @author anderslm@kth.se
  */
 public class BooksPane extends VBox {
-
     private TableView<Book> booksTable;
-    private ObservableList<Book> booksInTable; // the data backing the table view
-
+    private ObservableList<Book> booksInTable;
     private ComboBox<SearchMode> searchModeBox;
     private TextField searchField;
     private Button searchButton;
-
     private MenuBar menuBar;
 
     public BooksPane(BooksDbImpl booksDb) {
@@ -57,7 +53,6 @@ public class BooksPane extends VBox {
      * @param type types: INFORMATION, WARNING et c.
      */
     protected void showAlertAndWait(String msg, Alert.AlertType type) {
-        // types: INFORMATION, WARNING et c.
         Alert alert = new Alert(type, msg);
         alert.showAndWait();
     }
@@ -66,7 +61,6 @@ public class BooksPane extends VBox {
 
         booksInTable = FXCollections.observableArrayList();
 
-        // init views and event handlers
         initBooksTable();
         initSearchView(controller);
         initMenus();
@@ -90,7 +84,6 @@ public class BooksPane extends VBox {
         booksTable.setEditable(false);
         booksTable.setPlaceholder(new Label("No rows to display"));
 
-        // Definiera kolumner för bokens attribut
         TableColumn<Book, String> titleCol = new TableColumn<>("Title");
         TableColumn<Book, Integer> bookIDCol = new TableColumn<>("Book ID");
         TableColumn<Book, String> isbnCol = new TableColumn<>("ISBN");
@@ -99,7 +92,6 @@ public class BooksPane extends VBox {
         TableColumn<Book, Integer> ratingCol = new TableColumn<>("Rating");
         TableColumn<Book, Genre> genreCol = new TableColumn<>("Genre");
 
-        // Ställ in cell value factories för varje kolumn
         titleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
         bookIDCol.setCellValueFactory(new PropertyValueFactory<>("bookId"));
         isbnCol.setCellValueFactory(new PropertyValueFactory<>("isbn"));
@@ -107,7 +99,6 @@ public class BooksPane extends VBox {
         ratingCol.setCellValueFactory(new PropertyValueFactory<>("rating"));
         genreCol.setCellValueFactory(new PropertyValueFactory<>("genre"));
 
-        // Anpassad cell value factory för författarkolumnen
         authorCol.setCellValueFactory(cellData -> {
             List<Author> authors = cellData.getValue().getAuthors();
             if (authors != null && !authors.isEmpty()) {
@@ -119,10 +110,8 @@ public class BooksPane extends VBox {
             return new ReadOnlyStringWrapper("No Authors");
         });
 
-        // Lägg till kolumner till tabellen
-        booksTable.getColumns().addAll(titleCol, bookIDCol, isbnCol, publishedCol, authorCol, ratingCol, genreCol);
 
-        // Sätt items i tabellen
+        booksTable.getColumns().addAll(titleCol, bookIDCol, isbnCol, publishedCol, authorCol, ratingCol, genreCol);
         booksTable.setItems(booksInTable);
     }
 
@@ -146,6 +135,8 @@ public class BooksPane extends VBox {
 
         Menu fileMenu = new Menu("File");
         MenuItem exitItem = new MenuItem("Exit");
+        exitItem.setOnAction(e -> {Controller.disconnect();
+        Platform.exit();});
         MenuItem connectItem = new MenuItem("Connect to Db");
         connectItem.setOnAction(e -> Controller.connect());
         MenuItem disconnectItem = new MenuItem("Disconnect");
@@ -162,6 +153,13 @@ public class BooksPane extends VBox {
 
         menuBar = new MenuBar();
         menuBar.getMenus().addAll(fileMenu, manageMenu);
+    }
+
+    public void setupCloseRequestHandler(Stage primaryStage) {
+        primaryStage.setOnCloseRequest(event -> {
+            Controller.disconnect();
+            Platform.exit();
+        });
     }
 
     private void showRemoveBookDialog() {
@@ -193,9 +191,8 @@ public class BooksPane extends VBox {
         dialog.getDialogPane().getButtonTypes().addAll(addButton, ButtonType.CANCEL);
         List<Author> selectedAuthors = new ArrayList<>();
 
-        // Skapa en TableView för att välja författare
         TableView<Author> authorTable = createAuthorSelectionTable();
-        authorTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE); // Tillåt multival
+        authorTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
         Button addNewAuthorButton = new Button("Add New Author");
         addNewAuthorButton.setOnAction(e -> {
@@ -234,7 +231,7 @@ public class BooksPane extends VBox {
         grid.add(ratingField, 1, 4);
         grid.add(new Label("Genre:"), 0, 5);
         grid.add(genreField, 1, 5);
-        grid.add(authorTable, 0, 6, 2, 1); // Span two columns
+        grid.add(authorTable, 0, 6, 2, 1);
         grid.add(addNewAuthorButton, 0, 7);
 
         dialog.getDialogPane().setContent(grid);
@@ -251,14 +248,10 @@ public class BooksPane extends VBox {
 
                     Book book = new Book(bookId, isbn, title, publishedDate, rating, genre);
 
-                    // Lägg till de valda författarna till boken
                     selectedAuthors.addAll(authorTable.getSelectionModel().getSelectedItems());
                     selectedAuthors.forEach(book::addAuthors);
 
-                    // Lägg till boken i databasen
                     Controller.addBook(book);
-
-                    // Uppdatera booksInTable med den nya boken
                     booksInTable.add(book);
 
                     return book;
@@ -343,10 +336,7 @@ public class BooksPane extends VBox {
         lastNameCol.setCellValueFactory(new PropertyValueFactory<>("lastName"));
         birthDateCol.setCellValueFactory(new PropertyValueFactory<>("birthDate"));
 
-        // Add columns to table
         authorTable.getColumns().addAll(idCol, firstNameCol, lastNameCol, birthDateCol);
-
-        // Fetch and display existing authors (this method needs to be implemented in your controller)
         Controller.fetchAllAuthors(authorTable);
 
         return authorTable;
