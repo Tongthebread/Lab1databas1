@@ -324,34 +324,4 @@ public class BooksDbImpl implements BooksDbInterface {
         return authors;
     }
 
-    @Override
-    public List<Book> getAllBooks() throws BooksDbException {
-        List<Book> allBooks = new ArrayList<>();
-        String sql = "SELECT * FROM Book";
-
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                int bookId = rs.getInt("bookID");
-                String isbn = rs.getString("isbn");
-                String title = rs.getString("title");
-                Date published = rs.getDate("published");
-                int rating = rs.getInt("rating");
-                String genreStr = rs.getString("genre");
-                Genre genre = Genre.valueOf(genreStr.toUpperCase());
-
-                Book book = new Book(bookId, isbn, title, published, rating, genre);
-
-                List<Author> authors = getAuthorsForBook(bookId);
-                for (Author author : authors) {
-                    book.addAuthors(author);
-                }
-                allBooks.add(book);
-            }
-        } catch (SQLException e) {
-            throw new BooksDbException("Error fetching all books", e);
-        }
-        return allBooks;
-    }
-
 }

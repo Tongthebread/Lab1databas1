@@ -52,10 +52,6 @@ public class Book implements Comparable<Book>{
         }
     }
 
-    public void setRating(int rating) {
-        this.rating = rating;
-    }
-
     private boolean checkISBN(String isbn) {
         String regex = "\\d{10}|\\d{13}";
         return isbn.matches(regex);

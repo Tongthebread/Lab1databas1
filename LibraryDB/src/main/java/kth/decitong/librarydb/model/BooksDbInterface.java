@@ -37,5 +37,4 @@ public interface BooksDbInterface {
     void addAuthorToBook(Author author, Book book) throws BooksDbException;
     List<Author> getAuthorsForBook(int bookID) throws BooksDbException;
     List<Author> getAllAuthors() throws BooksDbException;
-    List<Book> getAllBooks() throws BooksDbException;
 }

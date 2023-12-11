@@ -191,6 +191,7 @@ public class Controller {
                         } catch (NumberFormatException e) {
                             booksView.showAlertAndWait("Invalid rating format. Please enter a numeric value.", Alert.AlertType.ERROR);
                         }
+                        break;
                     case Genre:
                         searchBooksByGenre(searchFor);
                         break;
