@@ -25,11 +25,9 @@ public class BooksDbImpl implements BooksDbInterface {
         try{
             Class.forName("com.mysql.cj.jdbc.Driver");
             conn = DriverManager.getConnection(server, user, pwd);
-            System.out.println("Connection succeeded");
         } catch (ClassNotFoundException e){
             throw new BooksDbException("MySQL JDBC driver not found");
         }catch (SQLException e){
-            System.out.println("Couldn't connect");
             throw new BooksDbException("Error connection to database");
         }
     }

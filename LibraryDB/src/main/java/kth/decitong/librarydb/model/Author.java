@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.Date;
 
 public class Author implements Comparable<Author> {
-    private int authorID;
-    private String firstName;
-    private String lastName;
-    private Date birthDate;
-    private ArrayList<Book> books;
+    private final int authorID;
+    private final String firstName;
+    private final String lastName;
+    private final Date birthDate;
+    private final ArrayList<Book> books;
 
     public Author(int authorID, String firstName, String lastName, Date birthDate) {
         this.authorID = authorID;

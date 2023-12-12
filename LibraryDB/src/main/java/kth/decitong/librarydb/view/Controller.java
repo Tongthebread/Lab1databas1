@@ -1,5 +1,6 @@
 package kth.decitong.librarydb.view;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.scene.control.Alert;
 import javafx.scene.control.TableView;
@@ -24,151 +25,211 @@ public class Controller {
     }
 
     public static void connect() {
-        try {
-            booksDb.connect("DB_LIBRARY"); // Use your actual database name
-            booksView.showAlertAndWait("Connected to database successfully", Alert.AlertType.INFORMATION);
-        } catch (Exception e) {
-            booksView.showAlertAndWait("Failed to connect to database: " + e.getMessage(), Alert.AlertType.ERROR);
-        }
+        new Thread(() -> {
+            try {
+                booksDb.connect("DB_LIBRARY");
+                Platform.runLater(() ->
+                        booksView.showAlertAndWait("Connected to database successfully", Alert.AlertType.INFORMATION));
+            } catch (Exception e) {
+                Platform.runLater(() ->
+                        booksView.showAlertAndWait("Failed to connect to database: " + e.getMessage(), Alert.AlertType.ERROR));
+            }
+        }).start();
     }
+
 
     public static void disconnect() {
-        try {
-            booksDb.disconnect();
-            booksView.showAlertAndWait("Disconnected from database.", INFORMATION);
-        } catch (Exception e) {
-            booksView.showAlertAndWait("Error disconnecting from database: " + e.getMessage(), ERROR);
-        }
+        new Thread(() -> {
+            try {
+                booksDb.disconnect();
+                Platform.runLater(() ->
+                        booksView.showAlertAndWait("Disconnected from database.", INFORMATION));
+            } catch (Exception e) {
+                Platform.runLater(() ->
+                        booksView.showAlertAndWait("Error disconnecting from database: " + e.getMessage(), ERROR));
+            }
+        }).start();
     }
 
-    public static void addBook(Book book) {
-        try {
-            booksDb.addBook(book);
-            for (Author author : book.getAuthors()) {
-                booksDb.addAuthorToBook(author, book);
-            }
-            List<Author> fetchedAuthors = booksDb.getAuthorsForBook(book.getBookId());
-            book.getAuthors().clear();
-            book.getAuthors().addAll(fetchedAuthors);
 
-            booksView.showAlertAndWait("Book and authors added successfully", INFORMATION);
-        } catch (Exception e){
-            booksView.showAlertAndWait("Error adding book and authors to database", ERROR);
-        }
+    public static void addBook(Book book) {
+        new Thread(() -> {
+            try {
+                booksDb.addBook(book);
+                for (Author author : book.getAuthors()) {
+                    booksDb.addAuthorToBook(author, book);
+                }
+                List<Author> fetchedAuthors = booksDb.getAuthorsForBook(book.getBookId());
+                book.getAuthors().clear();
+                book.getAuthors().addAll(fetchedAuthors);
+
+                Platform.runLater(() ->
+                        booksView.showAlertAndWait("Book and authors added successfully", INFORMATION));
+            } catch (Exception e){
+                Platform.runLater(() ->
+                        booksView.showAlertAndWait("Error adding book and authors to database", ERROR));
+            }
+        }).start();
     }
 
     public static void addAuthor(Author author){
-        try{
-            booksDb.addAuthor(author);
-            booksView.showAlertAndWait("Author added successfully.", INFORMATION);
-        } catch (Exception e) {
-            booksView.showAlertAndWait("Error adding author to database", ERROR);
-        }
+        new Thread(() -> {
+            try {
+                booksDb.addAuthor(author);
+                Platform.runLater(() ->
+                        booksView.showAlertAndWait("Author added successfully.", INFORMATION));
+            } catch (Exception e) {
+                Platform.runLater(() ->
+                        booksView.showAlertAndWait("Error adding author to database", ERROR));
+            }
+        }).start();
     }
+
 
     public static void deleteBook(int bookId) {
-        try {
-            booksDb.deleteBook(bookId);
-            booksView.showAlertAndWait("Book removed successfully.", Alert.AlertType.INFORMATION);
-        } catch (Exception e) {
-            booksView.showAlertAndWait("Error removing book from database", Alert.AlertType.ERROR);
-        }
+        new Thread(() -> {
+            try {
+                booksDb.deleteBook(bookId);
+                Platform.runLater(() ->
+                        booksView.showAlertAndWait("Book removed successfully.", Alert.AlertType.INFORMATION));
+            } catch (Exception e) {
+                Platform.runLater(() ->
+                        booksView.showAlertAndWait("Error removing book from database", Alert.AlertType.ERROR));
+            }
+        }).start();
     }
+
 
     public static void fetchAllAuthors(TableView<Author> authorTable) {
-        try {
-            List<Author> authors = booksDb.getAllAuthors();
-            authorTable.setItems(FXCollections.observableArrayList(authors));
-        } catch (Exception e) {
-            booksView.showAlertAndWait("Error fetching authors from database", ERROR);
-        }
+        new Thread(() -> {
+            try {
+                List<Author> authors = booksDb.getAllAuthors();
+                Platform.runLater(() ->
+                        authorTable.setItems(FXCollections.observableArrayList(authors)));
+            } catch (Exception e) {
+                Platform.runLater(() ->
+                        booksView.showAlertAndWait("Error fetching authors from database", ERROR));
+            }
+        }).start();
     }
 
+
     protected void searchBooksByISBN(String isbn) {
-        try {
-            List<Book> result = booksDb.searchBooksByISBN(isbn);
-            for (Book book : result) {
-                List<Author> authors = booksDb.getAuthorsForBook(book.getBookId());
-                book.getAuthors().clear();
-                book.getAuthors().addAll(authors);
+        new Thread(() -> {
+            try {
+                List<Book> result = booksDb.searchBooksByISBN(isbn);
+                for (Book book : result) {
+                    List<Author> authors = booksDb.getAuthorsForBook(book.getBookId());
+                    book.getAuthors().clear();
+                    book.getAuthors().addAll(authors);
+                }
+                Platform.runLater(() -> {
+                    if (result.isEmpty()) {
+                        booksView.showAlertAndWait("No books found with the given ISBN.", INFORMATION);
+                    } else {
+                        booksView.displayBooks(result);
+                    }
+                });
+            } catch (Exception e) {
+                Platform.runLater(() ->
+                        booksView.showAlertAndWait("Error searching books by ISBN: " + e.getMessage(), ERROR));
             }
-            if (result.isEmpty()) {
-                booksView.showAlertAndWait("No books found with the given ISBN.", INFORMATION);
-            } else {
-                booksView.displayBooks(result);
-            }
-        } catch (Exception e) {
-            booksView.showAlertAndWait("Error searching books by ISBN: " + e.getMessage(), ERROR);
-        }
+        }).start();
     }
+
+
     protected void searchBooksByAuthor(String authorName) {
-        try {
-            List<Book> result = booksDb.searchBooksByAuthor(authorName);
-            for (Book book : result) {
-                List<Author> authors = booksDb.getAuthorsForBook(book.getBookId());
-                book.getAuthors().clear();
-                book.getAuthors().addAll(authors);
+        new Thread(() -> {
+            try {
+                List<Book> result = booksDb.searchBooksByAuthor(authorName);
+                for (Book book : result) {
+                    List<Author> authors = booksDb.getAuthorsForBook(book.getBookId());
+                    book.getAuthors().clear();
+                    book.getAuthors().addAll(authors);
+                }
+                Platform.runLater(() -> {
+                    if (result.isEmpty()) {
+                        booksView.showAlertAndWait("No books found for the author: " + authorName, INFORMATION);
+                    } else {
+                        booksView.displayBooks(result);
+                    }
+                });
+            } catch (Exception e) {
+                Platform.runLater(() ->
+                        booksView.showAlertAndWait("Error searching books by author: " + e.getMessage(), ERROR));
             }
-            if (result.isEmpty()) {
-                booksView.showAlertAndWait("No books found for the author: " + authorName, INFORMATION);
-            } else {
-                booksView.displayBooks(result);
-            }
-        } catch (Exception e) {
-            booksView.showAlertAndWait("Error searching books by author: " + e.getMessage(), ERROR);
-        }
+        }).start();
     }
+
+
     protected void searchBooksByTitle(String title) {
-        try {
-            List<Book> result = booksDb.searchBooksByTitle(title);
-            for (Book book : result) {
-                List<Author> authors = booksDb.getAuthorsForBook(book.getBookId());
-                book.getAuthors().clear();
-                book.getAuthors().addAll(authors);
+        new Thread(() -> {
+            try {
+                List<Book> result = booksDb.searchBooksByTitle(title);
+                for (Book book : result) {
+                    List<Author> authors = booksDb.getAuthorsForBook(book.getBookId());
+                    book.getAuthors().clear();
+                    book.getAuthors().addAll(authors);
+                }
+                Platform.runLater(() -> {
+                    if (result.isEmpty()) {
+                        booksView.showAlertAndWait("No books found for the title: " + title, INFORMATION);
+                    } else {
+                        booksView.displayBooks(result);
+                    }
+                });
+            } catch (Exception e) {
+                Platform.runLater(() ->
+                        booksView.showAlertAndWait("Error searching books by title: " + e.getMessage(), ERROR));
             }
-            if (result.isEmpty()) {
-                booksView.showAlertAndWait("No books found for the title: " + title, INFORMATION);
-            } else {
-                booksView.displayBooks(result);
-            }
-        } catch (Exception e) {
-            booksView.showAlertAndWait("Error searching books by title: " + e.getMessage(), ERROR);
-        }
+        }).start();
     }
+
+
     protected void searchBooksByRating(int rating) {
-        try {
-            List<Book> result = booksDb.searchBooksByRating(rating);
-            for (Book book : result) {
-                List<Author> authors = booksDb.getAuthorsForBook(book.getBookId());
-                book.getAuthors().clear();
-                book.getAuthors().addAll(authors);
+        new Thread(() -> {
+            try {
+                List<Book> result = booksDb.searchBooksByRating(rating);
+                for (Book book : result) {
+                    List<Author> authors = booksDb.getAuthorsForBook(book.getBookId());
+                    book.getAuthors().clear();
+                    book.getAuthors().addAll(authors);
+                }
+                Platform.runLater(() -> {
+                    if (result.isEmpty()) {
+                        booksView.showAlertAndWait("No books found for the rating: " + rating, INFORMATION);
+                    } else {
+                        booksView.displayBooks(result);
+                    }
+                });
+            } catch (Exception e) {
+                Platform.runLater(() ->
+                        booksView.showAlertAndWait("Error searching books by rating: " + e.getMessage(), ERROR));
             }
-            if (result.isEmpty()) {
-                booksView.showAlertAndWait("No books found for the rating: " + rating, INFORMATION);
-            } else {
-                booksView.displayBooks(result);
-            }
-        } catch (Exception e) {
-            booksView.showAlertAndWait("Error searching books by rating: " + e.getMessage(), ERROR);
-        }
+        }).start();
     }
 
     protected void searchBooksByGenre(String genre) {
-        try {
-            List<Book> result = booksDb.searchBooksByGenre(String.valueOf(genre));
-            for (Book book : result) {
-                List<Author> authors = booksDb.getAuthorsForBook(book.getBookId());
-                book.getAuthors().clear();
-                book.getAuthors().addAll(authors);
+        new Thread(() -> {
+            try {
+                List<Book> result = booksDb.searchBooksByGenre(String.valueOf(genre));
+                for (Book book : result) {
+                    List<Author> authors = booksDb.getAuthorsForBook(book.getBookId());
+                    book.getAuthors().clear();
+                    book.getAuthors().addAll(authors);
+                }
+                Platform.runLater(() -> {
+                    if (result.isEmpty()) {
+                        booksView.showAlertAndWait("No books found for the genre: " + genre, INFORMATION);
+                    } else {
+                        booksView.displayBooks(result);
+                    }
+                });
+            } catch (Exception e) {
+                Platform.runLater(() ->
+                        booksView.showAlertAndWait("Error searching books by genre: " + e.getMessage(), ERROR));
             }
-            if (result.isEmpty()) {
-                booksView.showAlertAndWait("No books found for the genre: " + genre, INFORMATION);
-            } else {
-                booksView.displayBooks(result);
-            }
-        } catch (Exception e) {
-            booksView.showAlertAndWait("Error searching books by genre: " + e.getMessage(), ERROR);
-        }
+        }).start();
     }
 
     protected void onSearchSelected(String searchFor, SearchMode mode) {
@@ -189,7 +250,8 @@ public class Controller {
                             int rating = Integer.parseInt(searchFor);
                             searchBooksByRating(rating);
                         } catch (NumberFormatException e) {
-                            booksView.showAlertAndWait("Invalid rating format. Please enter a numeric value.", Alert.AlertType.ERROR);
+                            Platform.runLater(() ->
+                                    booksView.showAlertAndWait("Invalid rating format. Please enter a numeric value.", Alert.AlertType.ERROR));
                         }
                         break;
                     case Genre:
@@ -197,10 +259,12 @@ public class Controller {
                         break;
                 }
             } else {
-                booksView.showAlertAndWait("Enter a search string!", WARNING);
+                Platform.runLater(() ->
+                        booksView.showAlertAndWait("Enter a search string!", WARNING));
             }
         } catch (Exception e) {
-            booksView.showAlertAndWait("Search error: " + e.getMessage(), ERROR);
+            Platform.runLater(() ->
+                    booksView.showAlertAndWait("Search error: " + e.getMessage(), ERROR));
         }
     }
 

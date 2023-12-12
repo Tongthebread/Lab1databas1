@@ -6,15 +6,12 @@ import java.util.ArrayList;
 public class Book implements Comparable<Book>{
 
     private final int bookId;
-    private final String isbn; // should check format (10 eller 13 siffror)
+    private final String isbn;
     private final String title;
     private final Date published;
     private int rating;
-    private ArrayList<Author> authors;
-    private Genre genre;
-    // TODO:
-    // Add authors, as a separate class(!), and corresponding methods, to your implementation
-    // as well, i.e. "private ArrayList<Author> authors;"
+    private final ArrayList<Author> authors;
+    private final Genre genre;
 
     public Book(int bookId, String isbn, String title, Date published, int rating, Genre genre) {
         this.bookId = bookId;
@@ -34,12 +31,21 @@ public class Book implements Comparable<Book>{
     }
 
     public int getBookId() { return bookId; }
+
     public String getIsbn() { return isbn; }
+
     public String getTitle() { return title; }
+
     public Date getPublished() { return published; }
 
     public int getRating() {
         return rating;
+    }
+
+    public void setRating(int rating){
+        if(checkRating(rating)){
+            this.rating = rating;
+        }
     }
 
     public ArrayList<Author> getAuthors() {
@@ -47,7 +53,7 @@ public class Book implements Comparable<Book>{
     }
 
     public void addAuthors(Author authors) {
-        if (!this.authors.equals(authors)){
+        if (!this.authors.contains(authors)){
             this.authors.add(authors);
         }
     }
@@ -56,7 +62,6 @@ public class Book implements Comparable<Book>{
         String regex = "\\d{10}|\\d{13}";
         return isbn.matches(regex);
     }
-
 
     private boolean checkRating(int rating){
         return rating >= 1 && rating <= 5;
